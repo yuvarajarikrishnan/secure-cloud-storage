@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Cloud Storage</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        header {
+            background: #2563eb;
+            color: white;
+            padding: 20px 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .hero {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .hero img {
+            width: 300px;
+            max-width: 100%;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .hero h2 {
+            font-size: 32px;
+            margin: 10px;
+        }
+
+        .hero p {
+            color: #6b7280;
+            font-size: 18px;
+        }
+
+        .upload-box {
+            margin-top: 30px;
+            padding: 30px;
+            border: 2px dashed #2563eb;
+            border-radius: 12px;
+            background: #eff6ff;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+        @media (max-width: 600px) {
+
+    header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    .container {
+        margin: 20px auto;
+        padding: 10px;
+    }
+
+    .hero {
+        padding: 20px;
+    }
+
+    .hero h2 {
+        font-size: 25px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .upload-box {
+        padding: 20px;
+    }
+
+    #fileList > div {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+}
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>☁ Secure Cloud Storage</h1>
+
+    <div>
+        <span>Welcome, {{ current_user.username }}</span>
+
+        <a href="{{ url_for('logout') }}"
+           style="color: white; margin-left: 20px;">
+            Logout
+        </a>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="hero">
+
+        <img src="{{ url_for('static', filename='cloud.jpg.png') }}"
+     alt="Cloud Storage">
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <p style="
+    color: {% if category == 'success' %}green{% else %}red{% endif %};
+    font-weight: bold;
+">
+    {{ message }}
+</p>
+    {% endfor %}
+{% endwith %}
+<p>
+    ☁️ Storage Used:
+    {{ "%.2f"|format(storage_used / (1024 * 1024)) }} MB
+    /
+    {{ "%.0f"|format(storage_limit / (1024 * 1024 * 1024)) }} GB
+</p>
+
+{% set storage_percent = (storage_used / storage_limit * 100) if storage_limit > 0 else 0 %}
+
+<div style="
+    width: 100%;
+margin: 0 auto;
+    max-width: 600px;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+">
+    <div style="
+        width: {{ storage_percent }}%;
+        height: 100%;
+        background: #2563eb;
+        border-radius: 10px;
+    "></div>
+</div>
+<p>
+    {{ "%.2f"|format(storage_percent) }}% used
+</p>
+<input
+    type="text"
+    id="fileSearch"
+    placeholder="🔎 Search your files..."
+    onkeyup="searchFiles()"
+    style="
+        width: 100%;
+        max-width: 500px;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+    "
+><a href="{{ url_for('download_all') }}"
+   style="
+       display: inline-block;
+       margin: 15px 0;
+       padding: 10px 18px;
+       background: #16a34a;
+       color: white;
+       text-decoration: none;
+       border-radius: 8px;
+       font-weight: bold;
+   ">
+    📦 Download All Files
+</a>
+        <h2>Store Your Files Securely</h2>
+
+        <p>
+            Upload and manage your files using our secure cloud storage system.
+        </p>
+
+        <div class="upload-box">
+
+            <h3>Upload a File</h3>
+
+            <div class="upload-box">
+
+    <h3>Upload a File</h3>
+
+    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <br>
+        <button type="submit">Upload File</button>
+    </form>
+    <div id="uploadProgressContainer" style="
+    display: none;
+    margin-top: 15px;
+">
+
+    <p id="uploadStatus" style="
+        font-weight: bold;
+        color: #2563eb;
+    ">
+        Uploading... 0%
+    </p>
+
+    <div style="
+        width: 100%;
+        max-width: 500px;
+        height: 20px;
+        background: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 0 auto;
+    ">
+
+        <div id="uploadProgress" style="
+            width: 0%;
+            height: 100%;
+            background: #2563eb;
+            border-radius: 10px;
+        "></div>
+
+    </div>
+
+</div>
+    <h2>Your Files</h2>
+
+    <p>
+    📁 Total Files: {{ files|length }}
+</p>
+
+<div id="fileList">
+
+    {% for file in files %}
+
+    <div style="
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    ">
+
+        <span>
+    {% if file.lower().endswith(('.png', '.jpg', '.jpeg')) %}
+        🖼️
+    {% elif file.lower().endswith('.pdf') %}
+        📕
+    {% elif file.lower().endswith('.txt') %}
+        📝
+    {% elif file.lower().endswith('.docx') %}
+        📘
+    {% elif file.lower().endswith('.xlsx') %}
+        📊
+    {% else %}
+        📄
+    {% endif %}
+
+    {{ file }}
+</span>
+
+        <div>
+            <a href="{{ url_for('download_file', filename=file) }}"
+               style="
+                   margin-right: 10px;
+                   text-decoration: none;
+                   color: #2563eb;
+                   font-weight: bold;
+               ">
+                Download
+            </a>
+
+            <a href="{{ url_for('delete_file', filename=file) }}"
+               onclick="return confirm('Are you sure you want to delete this file?');"
+               style="
+                   text-decoration: none;
+                   color: #dc2626;
+                   font-weight: bold;
+               ">
+                Delete
+            </a>
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <p>No files uploaded yet.</p>
+
+    {% endfor %}
+
+</div>
+
+</div>
+<ul>
+    {% for file in files %}
+        <li>{{ file }}</li>
+    {% else %}
+        <li>No files uploaded yet.</li>
+    {% endfor %}
+</ul>
+
+        </div>
+
+    </div>
+
+</div>
+<script>
+function searchFiles() {
+    const searchText = document.getElementById("fileSearch").value.toLowerCase();
+    const fileItems = document.querySelectorAll("#fileList > div");
+
+    fileItems.forEach(function(item) {
+        const fileName = item.textContent.toLowerCase();
+
+        if (fileName.includes(searchText)) {
+            item.style.display = "";
+        } else {
+            item.style.display = "none";
+        }
+    });
+}
+const uploadForm = document.getElementById("uploadForm");
+const uploadProgressContainer = document.getElementById("uploadProgressContainer");
+const uploadProgress = document.getElementById("uploadProgress");
+const uploadStatus = document.getElementById("uploadStatus");
+
+uploadForm.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    const formData = new FormData(uploadForm);
+    const xhr = new XMLHttpRequest();
+
+    uploadProgressContainer.style.display = "block";
+    uploadProgress.style.width = "0%";
+    uploadStatus.textContent = "Uploading... 0%";
+
+    xhr.upload.addEventListener("progress", function(event) {
+
+        if (event.lengthComputable) {
+
+            const percent = Math.round(
+                (event.loaded / event.total) * 100
+            );
+
+            uploadProgress.style.width = percent + "%";
+            uploadStatus.textContent = "Uploading... " + percent + "%";
+        }
+
+    });
+
+    xhr.addEventListener("load", function() {
+
+        if (xhr.status === 200) {
+
+            uploadProgress.style.width = "100%";
+            uploadStatus.textContent = "Upload complete!";
+
+            setTimeout(function() {
+                window.location.reload();
+            }, 500);
+
+        } else {
+
+            uploadStatus.textContent = "Upload failed!";
+        }
+
+    });
+
+    xhr.addEventListener("error", function() {
+        uploadStatus.textContent = "Upload failed!";
+    });
+
+    xhr.open("POST", "/upload");
+    xhr.send(formData);
+});
+</script>
+</body>
+</html>
